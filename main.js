@@ -4,13 +4,14 @@ import {RGBELoader} from 'three/examples/jsm/loaders/RGBELoader.js';
 import { FloatType } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils';
+import { createNoise2D } from 'simplex-noise';
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#CCDDD3");
 
 const camera = new THREE.PerspectiveCamera( 45, innerWidth / innerHeight, 0.1, 1000);
-// camera.position.set( -17,31,33, );
-camera.position.set(0,0,50)
+camera.position.set( -17,31,33, );
+// camera.position.set(0,0,50)
 
 
 const renderer = new THREE.WebGLRenderer( { antialias: true} );
@@ -27,16 +28,26 @@ controls.enableDamping = true;
 
 let envmap;
 
+const MAX_HEIGHT = 8;
 
 (async function(){
   let pmrem = new THREE.PMREMGenerator(renderer);
   let envmapTexture = await new RGBELoader().setDataType(FloatType).loadAsync("/clarens-night.hdr");
   envmap = pmrem.fromEquirectangular(envmapTexture).texture;
- 
 
-  for ( let i = -10; i < 10; i++ ){
-    for ( let j = -10; j < 10; j++ ){
-      makeHex( 3, tileToPosition( i, j ));
+  let noise2D = createNoise2D();
+
+  for ( let i = -15; i < 15; i++ ){
+    for ( let j = -15; j < 15; j++ ){
+      let position = tileToPosition( i, j );
+
+      if( position.length() > 16 ) continue;
+
+      let noise = (noise2D( i * 0.1 , j * 0.1 ) + 1) * 0.5;
+      noise = Math.pow( noise, 1.5 );
+
+      makeHex( noise * MAX_HEIGHT, position);
+
     }
   }
 
@@ -81,6 +92,5 @@ function makeHex( height, position ){
   hexagonGeometries = BufferGeometryUtils.mergeBufferGeometries( [hexagonGeometries, geo] );
 
 }
-
 
 
