@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import {RGBELoader} from 'three/examples/jsm/loaders/RGBELoader.js';
 import { FloatType } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils';
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#CCDDD3");
@@ -31,19 +32,55 @@ let envmap;
   let pmrem = new THREE.PMREMGenerator(renderer);
   let envmapTexture = await new RGBELoader().setDataType(FloatType).loadAsync("/clarens-night.hdr");
   envmap = pmrem.fromEquirectangular(envmapTexture).texture;
-  
-  let spehreMesh = new THREE.Mesh(
-    new THREE.SphereGeometry( 5, 10, 10 ),
-    new THREE.MeshStandardMaterial({ 
+ 
+
+  for ( let i = -10; i < 10; i++ ){
+    for ( let j = -10; j < 10; j++ ){
+      makeHex( 3, tileToPosition( i, j ));
+    }
+  }
+
+
+  makeHex( 3, new THREE.Vector2( 0, 0 ));
+  let hexagonMesh = new THREE.Mesh(
+    hexagonGeometries,
+    new THREE.MeshStandardMaterial({
       envMap: envmap,
-      roughness: 0,
-      metalness: 1
+      flatShading: true
     })
   );
-  scene.add(spehreMesh);
+  scene.add( hexagonMesh );
+
+
+  function tileToPosition( tileX, tileY ){
+    return new THREE.Vector2(( tileX + ( tileY % 2 ) * 0.5 ) * 1.77, tileY * 1.535 );
+  }
+
+
 
   renderer.setAnimationLoop(() => {
-    renderer.render(scene,camera)
+    controls.update();
+    renderer.render(scene,camera);
   });
 })();
+
+
+let hexagonGeometries = new THREE.BoxGeometry(0,0,0);
+
+function hexGeometry( height, position ){
+  let geo = new THREE.CylinderGeometry( 1, 1, height, 6, 1, false );
+  geo.translate( position.x, height * 0.5, position.y );
+
+  return geo
+}
+
+
+function makeHex( height, position ){
+
+  let geo = hexGeometry( height, position );
+  hexagonGeometries = BufferGeometryUtils.mergeBufferGeometries( [hexagonGeometries, geo] );
+
+}
+
+
 
