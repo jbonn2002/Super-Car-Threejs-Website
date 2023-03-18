@@ -1,17 +1,16 @@
 import './style.css'
 import * as THREE from 'three';
 import {RGBELoader} from 'three/examples/jsm/loaders/RGBELoader.js';
-import { FloatType, Light, PCFShadowMap } from 'three';
+import { CylinderGeometry, DoubleSide, FloatType, Light, PCFShadowMap } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils';
 import { createNoise2D } from 'simplex-noise';
-
-import water from './public/water.jpg'
-import mossTexture from './public/mosstexture.jpg'
-import stoneTexture from './public/stonetexture.jpg'
-import groundTexture from './public/groundtexture.jpg'
-import sandGravelTexture from './public/sandgraveltexture.jpg'
-import dirtTexture from './public/dirttexture.jpg'
+import water from './src/water.jpg'
+import mossTexture from './src/mosstexture.jpg'
+import stoneTexture from './src/stonetexture.jpg'
+import groundTexture from './src/groundtexture.jpg'
+import sandGravelTexture from './src/sandgraveltexture.jpg'
+import dirtTexture from './src/dirttexture.jpg'
 
 
 const scene = new THREE.Scene();
@@ -53,12 +52,12 @@ const MAX_HEIGHT = 10;
 const DIRT2_HEIGHT = MAX_HEIGHT * 0.8;
 const DIRT_HEIGHT = MAX_HEIGHT * 0.7;
 const GRASS_HEIGHT = MAX_HEIGHT * 0.5;
-const SAND_HEIGHT = MAX_HEIGHT * 0.3;
-const STONE_HEIGHT = MAX_HEIGHT * 0;
+const STONE_HEIGHT = MAX_HEIGHT * 0.3;
+const SAND_HEIGHT = MAX_HEIGHT * 0;
 
 (async function(){
   let pmrem = new THREE.PMREMGenerator(renderer);
-  let envmapTexture = await new RGBELoader().setDataType(FloatType).loadAsync("/clarens-night.hdr");
+  let envmapTexture = await new RGBELoader().setDataType(FloatType).loadAsync("/src/clarens-night.hdr");
   envmap = pmrem.fromEquirectangular(envmapTexture).texture;
 
   const textureLoader = new THREE.TextureLoader();
@@ -100,7 +99,7 @@ const STONE_HEIGHT = MAX_HEIGHT * 0;
 
 
   let seaMesh = new THREE.Mesh(
-    new THREE.CylinderGeometry( 17, 17, MAX_HEIGHT * 0.2, 50),
+    new THREE.CylinderGeometry( 17, 17, MAX_HEIGHT * 0.22, 50),
     new THREE.MeshPhysicalMaterial({
       envMap: envmap,
       color: new THREE.Color('#55aaff').convertSRGBToLinear().multiplyScalar(3),
@@ -109,7 +108,7 @@ const STONE_HEIGHT = MAX_HEIGHT * 0;
       transparent: true,
       thickness: 1.5,
       envMapIntensity: 0.2,
-      roughness: 0.5,
+      roughness: 0.7,
       metalness: 0.025,
       roughnessMap: textures.water,
       metalnessMap: textures.water
@@ -119,6 +118,35 @@ const STONE_HEIGHT = MAX_HEIGHT * 0;
   seaMesh.receiveShadow = true;
   seaMesh.position.set( 0, MAX_HEIGHT * 0.1, 0);
   scene.add( seaMesh );
+
+  
+  let mapContainer = new THREE.Mesh(
+    new CylinderGeometry( 17.1, 17.1, MAX_HEIGHT * 0.22, 50, 1, true),
+    new THREE.MeshPhysicalMaterial({
+      envMap: envmap,
+      map: textures.stoneTexture,
+      envMapIntensity: 0.2,
+      side: DoubleSide
+    })
+  )
+
+  mapContainer.receiveShadow = true;
+  mapContainer.position.set(0, MAX_HEIGHT * 0.1, 0);
+  scene.add( mapContainer );
+
+  let mapFloor = new THREE.Mesh(
+    new THREE.CylinderGeometry( 18.5, 18.5, MAX_HEIGHT * 0.1, 50),
+    new THREE.MeshPhysicalMaterial({
+      envMap: envmap,
+      map: textures.stoneTexture,
+      envMapIntensity: 0.1,
+      side: DoubleSide
+    })
+  )
+
+  mapFloor.receiveShadow = true;
+  mapFloor.position.set( 0, -MAX_HEIGHT * 0.05, 0);
+  scene.add( mapFloor );
 
 
 
@@ -155,14 +183,43 @@ function makeHex( height, position ){
 
   if ( height > DIRT2_HEIGHT ){
     dirt2Geo = BufferGeometryUtils.mergeBufferGeometries( [ geo, dirt2Geo] );
+
+    if( Math.random() > 0.8 ){
+      stoneGeo = BufferGeometryUtils.mergeBufferGeometries([ stoneGeo, stone( height, position )]);
+    }
+
+    if( Math.random() > 0.7 ){
+      grassGeo = BufferGeometryUtils.mergeBufferGeometries([ grassGeo, tree( height, position )]);
+    }
+
   }else if(height > DIRT_HEIGHT){
     dirtGeo = BufferGeometryUtils.mergeBufferGeometries( [ geo, dirtGeo] );
+
+    if( Math.random() > 0.7 ){
+      grassGeo = BufferGeometryUtils.mergeBufferGeometries([ grassGeo, tree( height, position )]);
+    }
+
   }else if(height > GRASS_HEIGHT){
     grassGeo = BufferGeometryUtils.mergeBufferGeometries( [ geo, grassGeo] );
-  }else if(height > SAND_HEIGHT){
-    sandGeo = BufferGeometryUtils.mergeBufferGeometries( [ geo, sandGeo] );
+
+    if( Math.random() > 0.7 ){
+      grassGeo = BufferGeometryUtils.mergeBufferGeometries([ grassGeo, tree( height, position )]);
+    }
+
   }else if(height > STONE_HEIGHT){
     stoneGeo = BufferGeometryUtils.mergeBufferGeometries( [ geo, stoneGeo] );
+
+    if( Math.random() > 0.8 && stoneGeo){
+      stoneGeo = BufferGeometryUtils.mergeBufferGeometries([ stoneGeo, stone( height, position )]);
+    }
+
+  }else if(height > SAND_HEIGHT){
+    sandGeo = BufferGeometryUtils.mergeBufferGeometries( [ geo, sandGeo] );
+
+    if( Math.random() > 0.8 && stoneGeo){
+      stoneGeo = BufferGeometryUtils.mergeBufferGeometries([ stoneGeo, stone( height, position )]);
+    }
+
   }
 
 }
@@ -180,9 +237,34 @@ function hexMesh( geo, map ){
   mesh.castShadow = true;
   mesh.receiveShadow = true;
 
-  return mesh
-
+  return mesh;
 }
 
+function stone( height, position ){
+  const px = Math.random() * 0.4;
+  const pz = Math.random() * 0.4;
 
+  const geo = new THREE.SphereGeometry( Math.random() * 0.3 + 0.1, 7, 7);
+  geo.translate( position.x + px, height, position.y + pz);
+
+  return geo;
+}
+
+function tree( height, position ){
+  const treeHeight = Math.random() * 1 + 1.25;
+
+  const geo = new CylinderGeometry( 0, 1.5, treeHeight, 3);
+  geo.translate( position.x, height + treeHeight * 0 + 1, position.y);
+
+
+  const geo2 = new CylinderGeometry( 0, 1.15, treeHeight, 3);
+  geo2.translate( position.x, height + treeHeight * 0.6 + 1, position.y);
+
+
+  const geo3 = new CylinderGeometry( 0, 0.8, treeHeight, 3);
+  geo3.translate( position.x, height + treeHeight * 1.25 + 1, position.y);
+
+  return BufferGeometryUtils.mergeBufferGeometries([geo, geo2, geo3]);
+
+}
 
