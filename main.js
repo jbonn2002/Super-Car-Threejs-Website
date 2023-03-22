@@ -21,14 +21,16 @@ camera.position.set( -17,31,33, );
 // camera.position.set(0,0,50)
 
 
-const renderer = new THREE.WebGLRenderer( { antialias: true} );
+const renderer = new THREE.WebGLRenderer( { 
+  antialias: true, 
+  canvas: document.querySelector('#background')
+} );
 renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.useLegacyLights = true;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
-document.body.appendChild( renderer.domElement )
 
 const light = new THREE.PointLight( new THREE.Color('#ffcb8e').convertSRGBToLinear().convertSRGBToLinear(), 1, 200 );
 light.position.set( 10, 20, 10);
@@ -45,6 +47,9 @@ const controls = new OrbitControls( camera, renderer.domElement );
 controls.target.set( 0, 0, 0 )
 controls.dampingFactor = 0.05;
 controls.enableDamping = true;
+controls.minDistance = 50;
+controls.maxDistance = 70;
+controls.maxPolarAngle = Math.PI / 2 ;
 
 let envmap;
 
