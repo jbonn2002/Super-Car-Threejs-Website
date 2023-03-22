@@ -149,6 +149,9 @@ const SAND_HEIGHT = MAX_HEIGHT * 0;
   scene.add( mapFloor );
 
 
+  clouds()
+
+
 
   function tileToPosition( tileX, tileY ){
     return new THREE.Vector2(( tileX + ( tileY % 2 ) * 0.5 ) * 1.77, tileY * 1.535 );
@@ -268,3 +271,40 @@ function tree( height, position ){
 
 }
 
+function clouds() {
+  let geo = new THREE.SphereGeometry( 0, 0, 0 );
+  let count = Math.floor(Math.pow(Math.random(), 0.45) * 4 );
+  // count = math.random * 4, number between 0-4
+
+  for( let i = 0; i < count; i++){
+    const puff1 = new THREE.SphereGeometry( 1.2, 7, 7 );
+    const puff2 = new THREE.SphereGeometry( 1.5, 7, 7 );
+    const puff3 = new THREE.SphereGeometry( 0.9, 7, 7 );
+
+    puff1.translate( -1.85, Math.random() * 0.3, 0);
+    puff2.translate( 0, Math.random() * 0.3, 0);
+    puff3.translate( 1.85, Math.random() * 0.3, 0);
+
+    const cloudGeo = BufferGeometryUtils.mergeBufferGeometries([puff1, puff2, puff3]);
+    cloudGeo.translate(
+      Math.random() * 20 - 10,
+      15,
+      Math.random() * 20 - 10
+    );
+    cloudGeo.rotateY( Math.random() * Math.PI * 2);
+    
+    geo = BufferGeometryUtils.mergeBufferGeometries([ geo, cloudGeo ]);
+  }
+
+  const mesh = new THREE.Mesh(
+    geo,
+    new THREE.MeshStandardMaterial({
+      envMap: envmap,
+      envMapIntensity: 0.75,
+      flatShading: true
+    })
+  );
+
+  scene.add(mesh);
+
+}
